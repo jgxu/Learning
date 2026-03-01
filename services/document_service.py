@@ -6,6 +6,7 @@ from models import Document, User
 from config import settings
 import services.ai_service as ai_service
 from datetime import datetime
+from utils.logging import app_logger
 
 # 确保上传目录存在
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -13,8 +14,10 @@ os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 def upload_document(db: Session, openid: str, file: UploadFile = None, link: str = None) -> Document:
     """上传文件或链接并返回解析文本"""
+    app_logger.info(f"用户上传文档，openid: {openid}")
     user = db.query(User).filter(User.openid == openid).first()
     if not user:
+        app_logger.error(f"用户不存在，openid: {openid}")
         raise ValueError("用户不存在")
     
     document = Document(user_id=user.id)
@@ -23,6 +26,7 @@ def upload_document(db: Session, openid: str, file: UploadFile = None, link: str
         # 处理文件上传
         file_ext = file.filename.split('.')[-1].lower()
         file_path = os.path.join(settings.UPLOAD_DIR, f"{datetime.utcnow().timestamp()}_{file.filename}")
+        app_logger.info(f"保存文件，文件名: {file.filename}，文件路径: {file_path}")
         
         # 保存文件
         with open(file_path, "wb") as buffer:
@@ -33,38 +37,46 @@ def upload_document(db: Session, openid: str, file: UploadFile = None, link: str
         document.file_path = file_path
         
         # 解析文件内容
+        app_logger.info(f"解析文件内容，文件类型: {document.file_type}")
         content = parse_file(file_path, document.file_type)
         document.content = content
         document.is_parsed = True
+        app_logger.info(f"文件解析完成，文档ID: {document.id}")
         
     elif link:
         # 处理链接
         document.title = link.split('/')[-1] if '/' in link else link
         document.file_type = "link"
         document.source_link = link
+        app_logger.info(f"处理链接，链接地址: {link}")
         
         # 解析链接内容
         content = parse_link(link)
         document.content = content
         document.is_parsed = True
+        app_logger.info(f"链接解析完成，文档ID: {document.id}")
     
     db.add(document)
     db.commit()
     db.refresh(document)
     
+    app_logger.info(f"文档上传成功，文档ID: {document.id}")
     return document
 
 
 def get_document_history(db: Session, openid: str, page: int = 1, page_size: int = 10) -> list[Document]:
     """分页获取上传历史"""
+    app_logger.info(f"获取文档历史，openid: {openid}，页码: {page}，每页数量: {page_size}")
     user = db.query(User).filter(User.openid == openid).first()
     if not user:
+        app_logger.error(f"用户不存在，openid: {openid}")
         raise ValueError("用户不存在")
     
     offset = (page - 1) * page_size
     documents = db.query(Document).filter(Document.user_id == user.id)
     documents = documents.order_by(Document.created_at.desc()).offset(offset).limit(page_size).all()
     
+    app_logger.info(f"获取文档历史成功，openid: {openid}，获取数量: {len(documents)}")
     return documents
 
 

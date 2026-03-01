@@ -31,14 +31,23 @@ def get_openid(x_wx_openid: Optional[str] = Header(None)) -> str:
 # 获取当前用户
 def get_current_user(x_wx_openid: str = Depends(get_openid), db: Session = Depends(get_db)):
     """根据openid获取当前用户，若不存在则创建"""
+    # 导入日志记录器
+    from utils.logging import app_logger
+    
+    app_logger.info(f"获取当前用户，openid: {x_wx_openid}")
+    
     user = db.query(User).filter(User.openid == x_wx_openid).first()
     
     # 如果用户不存在，则自动创建
     if not user:
+        app_logger.info(f"用户不存在，创建新用户，openid: {x_wx_openid}")
         user = User(openid=x_wx_openid)
         db.add(user)
         db.commit()
         db.refresh(user)
+        app_logger.info(f"新用户创建成功，用户ID: {user.id}")
+    else:
+        app_logger.info(f"用户已存在，用户ID: {user.id}")
     
     return user
 from fastapi import Depends, HTTPException, Header
@@ -74,13 +83,22 @@ def get_openid(x_wx_openid: Optional[str] = Header(None)) -> str:
 # 获取当前用户
 def get_current_user(x_wx_openid: str = Depends(get_openid), db: Session = Depends(get_db)):
     """根据openid获取当前用户，若不存在则创建"""
+    # 导入日志记录器
+    from utils.logging import app_logger
+    
+    app_logger.info(f"获取当前用户，openid: {x_wx_openid}")
+    
     user = db.query(User).filter(User.openid == x_wx_openid).first()
     
     # 如果用户不存在，则自动创建
     if not user:
+        app_logger.info(f"用户不存在，创建新用户，openid: {x_wx_openid}")
         user = User(openid=x_wx_openid)
         db.add(user)
         db.commit()
         db.refresh(user)
+        app_logger.info(f"新用户创建成功，用户ID: {user.id}")
+    else:
+        app_logger.info(f"用户已存在，用户ID: {user.id}")
     
     return user

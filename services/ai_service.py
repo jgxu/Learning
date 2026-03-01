@@ -6,6 +6,7 @@ from models import Vocabulary
 from schemas.vocabulary import WordAnalysis, Example, SentenceTranslation
 from config import settings
 from datetime import datetime
+from utils.logging import app_logger
 
 # 配置Gemini API
 os.environ["GOOGLE_API_KEY"] = settings.GEMINI_API_KEY
@@ -15,6 +16,8 @@ model = genai.GenerativeModel(settings.GEMINI_MODEL)
 
 def analyze_word(db: Session, user_id: str, word: str) -> WordAnalysis:
     """分析单词，返回释义、发音、例句"""
+    app_logger.info(f"分析单词，用户ID: {user_id}，单词: {word}")
+    
     # 检查缓存
     cached_vocab = db.query(Vocabulary).filter(
         Vocabulary.user_id == user_id,
@@ -23,6 +26,7 @@ def analyze_word(db: Session, user_id: str, word: str) -> WordAnalysis:
     
     if cached_vocab:
         # 如果有缓存，直接返回
+        app_logger.info(f"从缓存获取单词分析结果，用户ID: {user_id}，单词: {word}")
         examples = json.loads(cached_vocab.examples) if cached_vocab.examples else []
         return WordAnalysis(
             word=cached_vocab.word,
@@ -37,6 +41,7 @@ def analyze_word(db: Session, user_id: str, word: str) -> WordAnalysis:
     prompt += "{\"word\": \"单词\", \"phonetic\": \"音标\", \"translation\": \"中文释义\", \"examples\": [{\"sentence\": \"例句\", \"translation\": \"例句翻译\"}, ...]}"
     
     try:
+        app_logger.info(f"调用Gemini API分析单词，单词: {word}")
         response = model.generate_content(prompt)
         result = json.loads(response.text)
         
@@ -51,9 +56,11 @@ def analyze_word(db: Session, user_id: str, word: str) -> WordAnalysis:
         )
         db.add(vocab)
         db.commit()
+        app_logger.info(f"单词分析完成并缓存，用户ID: {user_id}，单词: {word}")
         
         return WordAnalysis(**result)
     except Exception as e:
+        app_logger.error(f"单词分析失败，单词: {word}，错误: {str(e)}")
         # 如果API调用失败，返回简单的默认格式
         return WordAnalysis(
             word=word,
@@ -65,18 +72,23 @@ def analyze_word(db: Session, user_id: str, word: str) -> WordAnalysis:
 
 def translate_sentence(sentence: str) -> SentenceTranslation:
     """翻译句子"""
+    app_logger.info(f"翻译句子: {sentence[:50]}{'...' if len(sentence) > 50 else ''}")
+    
     prompt = f"请将以下句子翻译成中文：{sentence}"
     prompt += "\n请仅返回翻译结果，不要添加任何额外信息。"
     
     try:
+        app_logger.info(f"调用Gemini API翻译句子")
         response = model.generate_content(prompt)
         translation = response.text.strip()
         
+        app_logger.info(f"句子翻译完成: {translation[:50]}{'...' if len(translation) > 50 else ''}")
         return SentenceTranslation(
             original=sentence,
             translation=translation
         )
     except Exception as e:
+        app_logger.error(f"句子翻译失败，错误: {str(e)}")
         return SentenceTranslation(
             original=sentence,
             translation="翻译失败"
