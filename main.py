@@ -237,7 +237,7 @@ async def create_payment_order(
     return payment_service.create_subscription_order(db, current_user.openid)
 
 # 健康检查接口
-@app.get("/health", tags=["系统管理"])
+@app.get("/health", tags=["健康检查"], summary="健康检查")
 async def health_check():
     """健康检查接口，用于监控应用状态"""
     return {
