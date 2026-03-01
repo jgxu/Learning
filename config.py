@@ -3,16 +3,16 @@ from dotenv import load_dotenv
 
 # 加载环境变量
 # 首先尝试加载系统环境变量中的ENVIRONMENT
-environment = os.getenv("ENVIRONMENT", "dev")  # 默认使用开发环境
+environment = os.getenv("ENVIRONMENT", "staging")  # 默认使用staging环境
 
 # 根据环境选择加载对应的配置文件
 env_files = {
-    "dev": ".env.dev",
+    "staging": ".env.staging",
     "prod": ".env.prod"
 }
 
 # 加载对应的.env文件
-load_dotenv(env_files.get(environment, ".env.dev"))
+load_dotenv(env_files.get(environment, ".env.staging"))
 
 class Settings:
     # 应用配置
@@ -20,7 +20,7 @@ class Settings:
     DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
     
     # 数据库配置
-    DATABASE_URL: str = os.getenv("DATABASE_URL", f"mysql+pymysql://root:password@localhost:3306/language_learning_{environment}")
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
     
     # Gemini API配置
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "your-gemini-api-key")

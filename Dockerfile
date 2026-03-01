@@ -55,8 +55,8 @@ EXPOSE 80
 
 # 设置环境变量
 ENV PYTHONUNBUFFERED=1
-# 默认环境设置为生产环境
-ENV ENVIRONMENT=prod
+# 默认环境设置为staging环境
+ENV ENVIRONMENT=staging
 
 # 添加健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
