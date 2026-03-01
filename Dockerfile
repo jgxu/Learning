@@ -31,7 +31,7 @@ EXPOSE 80
 # 确保 Python 输出直接打印到日志，不进行缓冲
 ENV PYTHONUNBUFFERED=1
 # 默认环境设置为生产环境
-ENV ENVIRONMENT=production
+ENV ENVIRONMENT=staging
 
 # 添加健康检查（微信云托管会根据此状态判断服务是否正常）
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
